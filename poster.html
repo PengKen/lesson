@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>海报寻迹 · Sign Scout 寻迹小探</title>
+<style>
+  :root{
+    --green:#2f6b2a; --leaf:#7cb342; --cream:#fffbea; --paper:#f4f9e6;
+    --ink:#3b3221; --orange:#f08a24; --blue:#3aa3d8; --gold:#f5b630;
+    --radius:20px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"Comic Sans MS","Chalkboard SE","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 10% 10%,#e8f5c8 0,transparent 40%),
+      radial-gradient(circle at 90% 20%,#d7f0fb 0,transparent 35%),
+      radial-gradient(circle at 50% 100%,#fdf1c7 0,transparent 45%),
+      #f3f8e4;
+    min-height:100vh;
+  }
+  button{font-family:inherit;cursor:pointer}
+  .wrap{max-width:1120px;margin:0 auto;padding:14px 14px 40px}
+
+  /* ---------- Header ---------- */
+  header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+  .brand h1{margin:0;font-size:clamp(22px,4vw,34px);color:var(--green);letter-spacing:.5px}
+  .brand p{margin:2px 0 0;font-size:14px;color:#6b5d3e}
+  .badges{display:flex;gap:6px;flex-wrap:wrap;background:#fffdf3;border:2px solid #e7d9a8;border-radius:999px;padding:6px 10px;box-shadow:0 3px 0 #e7d9a8}
+  .badge{display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-size:13px;border:1.5px dashed #c9bb8a;color:#a59872;background:#fff;transition:.3s}
+  .badge.got{border-style:solid;color:#fff;transform:scale(1.05)}
+  .badge.got[data-k=earth]{background:#8d6e3f;border-color:#6d522b}
+  .badge.got[data-k=fire]{background:#f08a24;border-color:#c96a10}
+  .badge.got[data-k=wind]{background:#46b3a3;border-color:#2f8a7d}
+  .badge.got[data-k=water]{background:#3aa3d8;border-color:#2479a6}
+  .badge.got[data-k=ice]{background:#6fc6e8;border-color:#3c9bc0}
+  .toolbar{display:flex;gap:8px}
+  .icon-btn{border:none;background:#fff;border-radius:999px;padding:8px 12px;font-size:14px;box-shadow:0 3px 0 #d9cfae;color:var(--ink)}
+  .icon-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #d9cfae}
+
+  /* ---------- Tip ---------- */
+  .tip{display:flex;align-items:center;gap:10px;background:#fff;border-radius:16px;padding:10px 14px;margin-bottom:12px;border:2px solid #dcebb8;font-size:15px}
+  .tip b{color:var(--green)}
+
+  /* ---------- Poster stage ---------- */
+  .stage{position:relative;width:100%;aspect-ratio:2279/1280;border-radius:var(--radius);overflow:hidden;
+    box-shadow:0 10px 30px rgba(80,110,40,.25),0 0 0 6px #fff;background:#fff;touch-action:none;cursor:none}
+  .poster{position:absolute;inset:0;transform-origin:0 0;transition:transform .9s cubic-bezier(.6,.05,.25,1)}
+  .poster img{width:100%;height:100%;display:block;user-select:none;-webkit-user-drag:none;pointer-events:none}
+  .hot{position:absolute;border-radius:28px;border:3px dashed rgba(245,182,48,0);transition:.25s;cursor:none}
+  .hot .q{position:absolute;right:-6px;top:-6px;width:clamp(22px,3vw,34px);height:clamp(22px,3vw,34px);border-radius:50%;
+    background:var(--gold);color:#fff;font-weight:bold;display:grid;place-items:center;font-size:clamp(12px,1.6vw,18px);
+    box-shadow:0 0 0 3px #fff,0 3px 8px rgba(0,0,0,.25);animation:pulse 1.6s infinite}
+  .hot.near{border-color:var(--gold);background:rgba(255,236,150,.18)}
+  .hot.done .q{background:#4caf50;animation:none}
+  .hot .label{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.6);opacity:0;background:#fff;
+    padding:6px 12px;border-radius:999px;font-size:clamp(11px,1.5vw,16px);white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.2);transition:.25s;pointer-events:none}
+  .hot.near .label{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+
+  .lens{position:absolute;width:150px;height:150px;border-radius:50%;pointer-events:none;z-index:20;
+    border:9px solid #8b5a2b;box-shadow:0 0 0 3px #d9a35f inset,0 8px 20px rgba(0,0,0,.35);
+    background-repeat:no-repeat;display:none;transform:translate(-50%,-50%)}
+  .lens::after{content:"";position:absolute;width:16px;height:70px;background:linear-gradient(90deg,#6d4420,#a36a35,#6d4420);
+    border-radius:8px;right:-38px;bottom:-62px;transform:rotate(-45deg);box-shadow:0 4px 8px rgba(0,0,0,.3)}
+  .lens::before{content:"";position:absolute;inset:0;border-radius:50%;
+    background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.55) 0,rgba(255,255,255,0) 30%)}
+  .lens.hot-glow{border-color:var(--gold);box-shadow:0 0 0 3px #fff6c8 inset,0 0 30px 8px rgba(255,210,60,.8)}
+
+  /* ---------- Buttons ---------- */
+  .btn{border:none;border-radius:999px;padding:10px 18px;font-size:15px;font-weight:bold;color:#fff;background:var(--leaf);box-shadow:0 4px 0 #558b2f}
+  .btn:active{transform:translateY(3px);box-shadow:0 1px 0 #558b2f}
+  .btn.orange{background:var(--orange);box-shadow:0 4px 0 #c0650c}
+  .btn.blue{background:var(--blue);box-shadow:0 4px 0 #22749f}
+  .btn.ghost{background:#fff;color:var(--ink);box-shadow:0 4px 0 #d9cfae}
+  .btn:disabled{opacity:.5}
+  @keyframes bob{from{transform:translateY(0) rotate(-4deg)}to{transform:translateY(-8px) rotate(4deg)}}
+
+  /* ---------- Modal / Scene ---------- */
+  .modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:14px;
+    background:rgba(40,60,20,.45);backdrop-filter:blur(3px)}
+  .modal.show{display:flex;animation:fade .3s}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .card{background:var(--cream);border-radius:26px;width:min(980px,100%);max-height:calc(100vh - 28px);overflow:auto;
+    padding:16px;border:4px solid #fff;box-shadow:0 20px 60px rgba(0,0,0,.35);position:relative;animation:pop .45s cubic-bezier(.3,1.6,.5,1)}
+  @keyframes pop{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+  .close{position:absolute;right:12px;top:12px;border:none;background:#fff;width:38px;height:38px;border-radius:50%;font-size:20px;box-shadow:0 3px 0 #d9cfae;z-index:5}
+  .scene-title{display:flex;align-items:center;gap:8px;margin:0 46px 10px 0;font-size:20px;color:var(--green);font-weight:bold}
+  .scene-title .num{background:var(--gold);color:#fff;border-radius:50%;width:30px;height:30px;display:grid;place-items:center;font-size:16px}
+  .scene-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:16px;align-items:start}
+  @media (max-width:760px){.scene-grid{grid-template-columns:1fr}}
+  .scene{position:relative;width:100%;border-radius:20px;overflow:hidden;background-repeat:no-repeat;touch-action:none;cursor:none;
+    box-shadow:0 0 0 5px #fff,0 8px 20px rgba(0,0,0,.18)}
+  .scene .fog{position:absolute;inset:0;background-repeat:no-repeat;filter:blur(8px) saturate(.5) brightness(1.18);transform:scale(1.04);transition:opacity 1.2s}
+  .scene .fog::after{content:"";position:absolute;inset:0;background:radial-gradient(circle,rgba(255,255,255,.35),rgba(255,255,255,.7))}
+  .scene.clear .fog{opacity:0}
+  .scene .spark{position:absolute;font-size:40px;transform:translate(-50%,-50%) scale(0);pointer-events:none;transition:.5s cubic-bezier(.3,1.8,.5,1)}
+  .scene.clear .spark{transform:translate(-50%,-50%) scale(1);animation:spin 2.5s linear infinite}
+  @keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+  .scene .lens{width:120px;height:120px;border-width:7px}
+  .scene .lens::after{width:13px;height:56px;right:-30px;bottom:-50px}
+  .scene-hint{margin-top:12px;font-size:15px;background:#fff;border-radius:14px;padding:10px 12px;border:2px dashed #e1d29a}
+  .panel{background:#fff;border-radius:20px;padding:16px;border:2px solid #efe3b8;min-height:200px}
+  .locked{color:#a99c74;text-align:center;padding:30px 10px;font-size:15px}
+  .locked .big{font-size:44px;display:block;margin-bottom:6px;animation:pulse 1.6s infinite}
+  .question{font-size:clamp(20px,2.6vw,26px);font-weight:bold;color:#2b4a1f;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .say{border:none;background:#e8f5d4;border-radius:50%;width:36px;height:36px;font-size:18px;flex:none}
+  .question-zh{color:#7a6c48;font-size:14px;margin:2px 0 12px}
+  .opts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .opt{position:relative;padding:0;border:none;background:none;display:flex;flex-direction:column;align-items:center;gap:6px;
+    color:var(--ink);transition:transform .2s,filter .3s}
+  .opt .pic{width:100%;aspect-ratio:1/1;border:4px solid #fff;border-radius:20px;background:#fff center/cover no-repeat;
+    box-shadow:0 4px 0 #e3d7ac,0 6px 14px rgba(0,0,0,.12);transition:box-shadow .2s,border-color .2s}
+  .opt .zh{font-size:14px;font-weight:bold}
+  .opt .mark{position:absolute;right:8px;top:8px;width:30px;height:30px;border-radius:50%;display:none;place-items:center;
+    color:#fff;font-size:18px;font-weight:bold;box-shadow:0 0 0 3px #fff}
+  .opt:hover:not(:disabled){transform:translateY(-4px) scale(1.03)}
+  .opt:hover:not(:disabled) .pic{box-shadow:0 8px 0 #e3d7ac,0 12px 20px rgba(0,0,0,.18)}
+  .opt.right{transform:scale(1.05)}
+  .opt.right .pic{border-color:#4caf50;box-shadow:0 0 0 4px #b9e6b0,0 0 24px 6px rgba(76,175,80,.55)}
+  .opt.right .mark{display:grid;background:#4caf50}
+  .opt.wrong .pic{border-color:#ef6c57}
+  .opt.wrong{filter:grayscale(.75) brightness(.95);animation:shake .45s}
+  .opt.wrong .mark{display:grid;background:#ef6c57}
+  .opt:disabled:not(.right){filter:grayscale(.6) opacity(.75)}
+  .feedback{min-height:24px;margin:10px 0 6px;font-size:15px;font-weight:bold}
+  .answer-btn{width:100%;margin-top:6px}
+  .answer{display:none;margin-top:12px;border-radius:18px;padding:12px;background:linear-gradient(135deg,#fff6d6,#e9f7d4);text-align:center;animation:pop .5s cubic-bezier(.3,1.6,.5,1)}
+  .answer.show{display:block}
+  .answer svg{width:110px;height:128px;animation:bob .8s ease-in-out infinite alternate}
+  .answer .en{font-size:clamp(20px,2.6vw,26px);font-weight:bold;color:var(--green)}
+  .answer .zh{color:#6b5d3e;margin:2px 0 8px}
+  .answer .fact{font-size:14px;background:#fff;border-radius:12px;padding:8px 10px;text-align:left;line-height:1.6}
+  .answer .row{display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+
+  /* intro / finish */
+  .intro{text-align:center;max-width:620px}
+  .intro .hero{width:100%;aspect-ratio:16/10;border-radius:20px;background-repeat:no-repeat;box-shadow:0 0 0 5px #fff,0 8px 20px rgba(0,0,0,.18)}
+  .intro h2{color:var(--green);margin:14px 0 4px;font-size:clamp(22px,4vw,30px)}
+  .intro .quote{font-size:18px;color:#5a4b2a;margin:6px 0 2px;font-style:italic}
+  .intro p{margin:6px 0;line-height:1.6}
+  .intro .btn{font-size:18px;padding:12px 28px;margin-top:10px}
+  .finish .spirits{display:flex;justify-content:center;gap:4px;flex-wrap:wrap;margin:8px 0}
+  .finish .spirits svg{width:70px;height:82px;animation:bob .5s ease-in-out infinite alternate}
+  .finish .spirits svg:nth-child(2n){animation-delay:.25s}
+  .confetti{position:fixed;top:-40px;font-size:26px;z-index:200;pointer-events:none;animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(120px);background:#2f6b2a;color:#fff;
+    padding:10px 18px;border-radius:999px;z-index:300;transition:.35s;font-size:15px;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  footer{text-align:center;color:#9a8d68;font-size:12px;margin-top:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <h1>Sign Scout 寻迹小探</h1>
+      <p>Find the nature traces! 拿起放大镜，找齐五个自然线索</p>
+    </div>
+    <div class="badges" id="badges"></div>
+    <div class="toolbar">
+      <button class="icon-btn" id="muteBtn" title="声音开关">🔊 声音</button>
+      <button class="icon-btn" id="resetBtn" title="重新开始">↺ 重玩</button>
+    </div>
+  </header>
+
+  <div class="tip">🔍 <span>移动<b>放大镜</b>（手机上用手指拖动）在海报里探秘，发现闪烁的 <b style="color:#f5b630">?</b> 后<b>点击</b>进入场景。</span></div>
+
+  <div class="stage" id="stage">
+    <div class="poster" id="poster">
+      <img src="poster-sm.jpg" alt="Sign Scout 寻迹小探 海报" id="posterImg" fetchpriority="high" decoding="async">
+    </div>
+    <div class="lens" id="lens"></div>
+  </div>
+
+  <footer>海报素材由用户提供 · 配音：Microsoft 神经网络语音（Ava / Ana）</footer>
+</div>
+
+<!-- Scene modal -->
+<div class="modal" id="sceneModal">
+  <div class="card">
+    <button class="close" id="sceneClose">✕</button>
+    <div class="scene-title"><span class="num" id="sceneNum">1</span><span id="sceneName">Scene</span></div>
+    <div class="scene-grid">
+      <div>
+        <div class="scene" id="scene">
+          <div class="fog" id="fog"></div>
+          <div class="spark" id="spark">✨</div>
+          <div class="lens" id="sceneLens"></div>
+        </div>
+        <div class="scene-hint" id="sceneHint"></div>
+      </div>
+      <div class="panel" id="panel"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Intro modal -->
+<div class="modal show" id="introModal">
+  <div class="card intro">
+    <div class="hero" id="hero"></div>
+    <h2>Nature Mother's Task 🌿</h2>
+    <div class="quote">"Take a look around, and you will never miss the beauty!"</div>
+    <p>自然妈妈把<b>大地、火、风、水、冰</b>五个小精灵藏进了海报里。<br>用放大镜找到它们，回答问题，收集全部 5 枚徽章吧！</p>
+    <button class="btn orange" id="startBtn">🔍 开始探险 Start</button>
+  </div>
+</div>
+
+<!-- Finish modal -->
+<div class="modal" id="finishModal">
+  <div class="card intro finish">
+    <h2>🎉 You found all five traces!</h2>
+    <p>太棒了！你找齐了全部五个自然线索！</p>
+    <div class="spirits" id="finishSpirits"></div>
+    <div class="quote">"The world is so fascinating!"</div>
+    <button class="btn orange" id="finishClose">🔍 继续探索</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+'use strict';
+const PW = 2279, PH = 1280;
+
+const ELEM = {
+  earth: { name:'Earth', zh:'大地', emoji:'🌱' },
+  fire:  { name:'Fire',  zh:'火',   emoji:'🔥' },
+  wind:  { name:'Wind',  zh:'风',   emoji:'🍃' },
+  water: { name:'Water', zh:'水',   emoji:'💧' },
+  ice:   { name:'Ice',   zh:'冰',   emoji:'❄️' },
+};
+
+// rect: [left, top, width, height] in % of poster; target: [x, y] in % of the scene crop
+const SCENES = [
+  { id:'earth', rect:[3.2,57,28,34], target:[48,55],
+    title:'Garden 菜园', hint:'雾里藏着从泥土里长出来的东西……用放大镜找找看，找到后点一下！',
+    q:'What helps the food grow?', qzh:'是什么帮助食物生长？', options:['earth','fire','ice'],
+    a:'Earth helps the food grow.', azh:'大地帮助食物生长。',
+    fact:'🥕 泥土里有养分和水分，小蚯蚓还会帮忙松土，胡萝卜才能长得又大又甜。' },
+  { id:'fire', rect:[6,23,25,31], target:[26,58],
+    title:'Rocket 火箭', hint:'有个东西正在冲上天空！找找是什么在推着它飞？',
+    q:'What sends the rocket up?', qzh:'是什么把火箭送上天？', options:['water','fire','wind'],
+    a:'Fire sends rockets up.', azh:'火把火箭送上天。',
+    fact:'🚀 火箭里的燃料燃烧，喷出又热又快的气体，把火箭推向天空。' },
+  { id:'wind', rect:[64.8,19,31.5,35.4], target:[60,32],
+    title:'Meadow 草原', hint:'草原上有高高的大风车，找到它！',
+    q:'What helps the windmill turn?', qzh:'是什么让风车转起来？', options:['ice','earth','wind'],
+    a:'Wind makes electricity.', azh:'风能发电。',
+    fact:'🌬️ 风吹动风车的大叶片，叶片转呀转，就能发出电来点亮我们的灯。风筝也是靠风飞起来的哦！' },
+  { id:'water', rect:[67,58.5,30,32], target:[56,47],
+    title:'River 小河', hint:'小河边有个木头做的大轮子，找到它！',
+    q:'What helps the water wheel?', qzh:'是什么让水车转起来？', options:['fire','water','ice'],
+    a:'Water helps the water wheel.', azh:'水帮助水车转动。',
+    fact:'🌊 流动的河水推着水车一圈一圈地转，古时候人们用它来磨面粉、浇灌农田。' },
+  { id:'ice', rect:[35.6,65,28.4,26.4], target:[33,42],
+    title:'Lunch Box 水果盒', hint:'水果盒里藏着亮晶晶、凉冰冰的东西，找到它！',
+    q:'What keeps fruit cool?', qzh:'是什么让水果保持凉爽？', options:['fire','ice','earth'],
+    a:'Ice keeps fruit cool.', azh:'冰让水果保持凉爽。',
+    fact:'🧊 冰块会吸走周围的热量，把水果放在冰旁边，就能保持新鲜又凉爽。' },
+];
+
+// Spirit cards used as answer-option backgrounds; the single-file build replaces paths with base64 data URIs.
+const ELEM_IMG = {
+  earth: 'elements/earth.jpg',
+  fire: 'elements/fire.jpg',
+  wind: 'elements/wind.jpg',
+  water: 'elements/water.jpg',
+  ice: 'elements/ice.jpg',
+};
+const $ = s => document.querySelector(s);
+
+// Fast first paint: show a small poster first, then swap in the full-res one once the page has loaded.
+// The single-file build points both at the same embedded image.
+const POSTER_SM = 'poster-sm.jpg';
+const POSTER_FULL = 'poster.jpg';
+let posterCssUrl = `url("${POSTER_SM}")`;
+function loadDeferredAssets(){
+  if (POSTER_FULL !== POSTER_SM){
+    const full = new Image();
+    full.onload = () => {
+      $('#posterImg').src = POSTER_FULL;
+      posterCssUrl = `url("${POSTER_FULL}")`;
+      document.querySelectorAll('[data-poster-bg]').forEach(el => { el.style.backgroundImage = posterCssUrl; });
+    };
+    full.onerror = () => console.warn('full poster failed to load, keeping preview', POSTER_FULL);
+    full.src = POSTER_FULL;
+  } else {
+    posterCssUrl = `url("${POSTER_FULL}")`;
+  }
+  Object.values(ELEM_IMG).forEach(src => { const im = new Image(); im.src = src; });
+  document.querySelectorAll('[data-elem-bg]').forEach(el => { el.style.backgroundImage = `url('${ELEM_IMG[el.dataset.elemBg]}')`; });
+}
+if (document.readyState === 'complete') setTimeout(loadDeferredAssets, 0);
+else window.addEventListener('load', () => setTimeout(loadDeferredAssets, 0));
+const stage = $('#stage'), poster = $('#poster'), lens = $('#lens');
+let muted = false;
+// localStorage can throw (e.g. sandboxed/blob iframes opened from file://); progress then lives in memory only.
+const store = (() => {
+  const mem = {};
+  try {
+    const t = '__signScoutTest';
+    window.localStorage.setItem(t, '1'); window.localStorage.removeItem(t);
+    return window.localStorage;
+  } catch (e) {
+    console.warn('localStorage unavailable, progress will not persist', e && e.message);
+    return {
+      getItem: k => (k in mem ? mem[k] : null),
+      setItem: (k, v) => { mem[k] = String(v); },
+      removeItem: k => { delete mem[k]; },
+    };
+  }
+})();
+let found = new Set(JSON.parse(store.getItem('signScoutFound') || '[]'));
+
+/* ---------------- Spirit SVG ---------------- */
+function spiritSVG(type){
+  const face = `
+    <ellipse cx="47" cy="86" rx="5.5" ry="6.5" fill="#3a2a1a"/><ellipse cx="73" cy="86" rx="5.5" ry="6.5" fill="#3a2a1a"/>
+    <circle cx="49" cy="83.5" r="2" fill="#fff"/><circle cx="75" cy="83.5" r="2" fill="#fff"/>
+    <ellipse cx="38" cy="98" rx="6" ry="3.5" fill="#ff8a80" opacity=".55"/><ellipse cx="82" cy="98" rx="6" ry="3.5" fill="#ff8a80" opacity=".55"/>
+    <path d="M52 99 Q60 108 68 99" stroke="#3a2a1a" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+  let body = '';
+  if (type === 'earth') body = `
+    <path d="M60 46 C48 20 30 22 26 30 C40 32 50 38 60 50Z" fill="#8bc34a" stroke="#558b2f" stroke-width="2"/>
+    <path d="M60 46 C72 16 94 20 96 28 C82 30 70 38 60 50Z" fill="#9ccc65" stroke="#558b2f" stroke-width="2"/>
+    <ellipse cx="60" cy="92" rx="40" ry="40" fill="#7cb342" stroke="#4e7a26" stroke-width="3"/>
+    <path d="M34 116 Q60 128 86 116 Q80 132 60 132 Q40 132 34 116Z" fill="#8d6e3f"/>`;
+  if (type === 'fire') body = `
+    <path d="M60 8 C76 34 100 46 96 88 C93 120 76 134 60 134 C44 134 27 120 24 88 C22 62 40 52 44 30 C50 46 54 40 60 8Z" fill="#ff7a30" stroke="#e0521a" stroke-width="3"/>
+    <path d="M60 52 C70 70 84 78 82 100 C80 120 70 128 60 128 C50 128 40 120 38 100 C37 82 50 74 60 52Z" fill="#ffc94a"/>`;
+  if (type === 'water') body = `
+    <path d="M60 10 C80 44 100 64 100 94 C100 118 82 134 60 134 C38 134 20 118 20 94 C20 64 40 44 60 10Z" fill="#4fc3f7" stroke="#1e88c7" stroke-width="3"/>
+    <path d="M38 70 Q34 86 40 98" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" opacity=".7"/>`;
+  if (type === 'ice') body = `
+    <path d="M60 6 L70 36 L90 16 L87 46 L108 40 L95 64 L100 102 Q98 134 60 134 Q22 134 20 102 L25 64 L12 40 L33 46 L30 16 L50 36Z" fill="#c9eefc" stroke="#4fb3dc" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M60 112 v14 M53 119 h14" stroke="#7fcbe8" stroke-width="2.5"/>`;
+  if (type === 'wind') body = `
+    <path d="M28 92 Q18 60 44 50 Q50 24 76 30 Q102 34 98 60 Q114 80 96 102 Q92 132 60 132 Q30 132 28 92Z" fill="#b2ebf2" stroke="#3fb2a5" stroke-width="3"/>
+    <path d="M96 60 Q118 52 112 36 Q106 26 96 34" stroke="#3fb2a5" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M14 70 Q4 60 12 50" stroke="#3fb2a5" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+  return `<svg viewBox="0 0 120 140" xmlns="http://www.w3.org/2000/svg">${body}${face}</svg>`;
+}
+
+/* ---------------- Sound: SFX + TTS ---------------- */
+// iOS 17+: let Web Audio sound effects play even when the ringer switch is on silent.
+try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { console.warn('audioSession', e); }
+let sfxCtx = null;
+function sfx(kind){
+  if (muted) return;
+  try {
+    sfxCtx = sfxCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (sfxCtx.state === 'suspended') sfxCtx.resume();
+    const t = sfxCtx.currentTime;
+    const seq = {
+      right: [[523,0],[659,.1],[784,.2],[1047,.3]],
+      wrong: [[300,0],[220,.15]],
+      found: [[880,0],[1175,.08],[1568,.16]],
+      click: [[660,0]],
+      win:   [[523,0],[659,.12],[784,.24],[1047,.36],[784,.5],[1047,.62]],
+    }[kind] || [];
+    seq.forEach(([f,d]) => {
+      const o = sfxCtx.createOscillator(), g = sfxCtx.createGain();
+      o.type = kind === 'wrong' ? 'square' : 'triangle';
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t+d);
+      g.gain.exponentialRampToValueAtTime(kind === 'wrong' ? 0.06 : 0.18, t+d+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+d+0.28);
+      o.connect(g).connect(sfxCtx.destination);
+      o.start(t+d); o.stop(t+d+0.3);
+    });
+  } catch (e) { console.warn('sfx failed', e); }
+}
+// Pre-recorded neural voice clips (Nature Mother asks, the spirits answer).
+// VOICE_SRC values are file paths here; the single-file build replaces them with base64 data URIs.
+const VOICE_SRC = {
+
+  intro: 'voice/intro.mp3',
+  look: 'voice/look.mp3',
+  q_earth: 'voice/q_earth.mp3',
+  q_fire: 'voice/q_fire.mp3',
+  q_wind: 'voice/q_wind.mp3',
+  q_water: 'voice/q_water.mp3',
+  q_ice: 'voice/q_ice.mp3',
+  a_earth: 'voice/a_earth.mp3',
+  a_fire: 'voice/a_fire.mp3',
+  a_wind: 'voice/a_wind.mp3',
+  a_water: 'voice/a_water.mp3',
+  a_ice: 'voice/a_ice.mp3',
+  finish: 'voice/finish.mp3'
+};
+const VOICE_BY_TEXT = {
+  "Take a look around, and you will never miss the beauty!": "intro",
+  "Let's look carefully!": "look",
+  "What helps the food grow?": "q_earth",
+  "What sends the rocket up?": "q_fire",
+  "What helps the windmill turn?": "q_wind",
+  "What helps the water wheel?": "q_water",
+  "What keeps fruit cool?": "q_ice",
+  "Earth helps the food grow.": "a_earth",
+  "Fire sends rockets up.": "a_fire",
+  "Wind makes electricity.": "a_wind",
+  "Water helps the water wheel.": "a_water",
+  "Ice keeps fruit cool.": "a_ice",
+  "You found all five traces! The world is so fascinating!": "finish"
+};
+const voiceAudio = new Audio();
+voiceAudio.preload = 'auto';
+voiceAudio.setAttribute('playsinline', '');
+let enVoice = null;
+function pickVoice(){
+  if (!('speechSynthesis' in window)) return;
+  const vs = speechSynthesis.getVoices();
+  enVoice = vs.find(v => /en[-_]US/i.test(v.lang) && /natural|neural|samantha|google|aria|jenny/i.test(v.name))
+         || vs.find(v => /^en/i.test(v.lang)) || null;
+}
+if ('speechSynthesis' in window){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function stopVoice(){
+  voiceAudio.pause();
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
+}
+function ttsFallback(text, lang){
+  if (!('speechSynthesis' in window)) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = lang; u.rate = 0.9; u.pitch = 1.05;
+  if (lang.startsWith('en') && enVoice) u.voice = enVoice;
+  speechSynthesis.speak(u);
+}
+function speak(text, lang='en-US'){
+  if (muted) return;
+  stopVoice();
+  const key = VOICE_BY_TEXT[text];
+  if (!key || !VOICE_SRC[key]){ console.warn('no voice clip for:', text); ttsFallback(text, lang); return; }
+  voiceAudio.src = VOICE_SRC[key];
+  voiceAudio.currentTime = 0;
+  const p = voiceAudio.play();
+  if (p) p.catch(e => { console.warn('voice clip play failed, using system TTS', e); ttsFallback(text, lang); });
+}
+
+/* ---------------- Badges ---------------- */
+function renderBadges(){
+  $('#badges').innerHTML = SCENES.map(s =>
+    `<span class="badge ${found.has(s.id)?'got':''}" data-k="${s.id}">${ELEM[s.id].emoji} ${ELEM[s.id].name}</span>`).join('');
+}
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ---------------- Poster hotspots ---------------- */
+const hots = {};
+SCENES.forEach((s, i) => {
+  const [l,t,w,h] = s.rect;
+  const d = document.createElement('div');
+  d.className = 'hot';
+  d.style.cssText = `left:${l}%;top:${t}%;width:${w}%;height:${h}%`;
+  d.innerHTML = `<span class="q">?</span><span class="label">🔍 点我探秘 · ${s.title}</span>`;
+  d.addEventListener('click', () => openScene(i));
+  poster.appendChild(d);
+  hots[s.id] = d;
+});
+function refreshHots(){
+  SCENES.forEach(s => {
+    const d = hots[s.id];
+    d.classList.toggle('done', found.has(s.id));
+    d.querySelector('.q').textContent = found.has(s.id) ? '✓' : '?';
+  });
+}
+
+/* ---------------- Lens helper ---------------- */
+// Draw a magnified view of the poster.
+// fullW/fullH: rendered poster size in px; offX/offY: poster px at container's top-left
+function drawLens(el, cx, cy, fullW, fullH, offX, offY, zoom){
+  const R = el.offsetWidth / 2;
+  el.style.left = cx + 'px';
+  el.style.top = cy + 'px';
+  el.style.backgroundImage = posterCssUrl; el.dataset.posterBg = '';
+  el.style.backgroundSize = `${fullW*zoom}px ${fullH*zoom}px`;
+  el.style.backgroundPosition = `${-( (offX+cx)*zoom - R )}px ${-( (offY+cy)*zoom - R )}px`;
+}
+
+let zoomed = false;
+// Touch: lens floats above the finger only while dragging, so a plain tap still hits what is under the finger.
+const drag = { x:0, y:0, moved:false };
+function trackDrag(e){
+  if (e.type === 'pointerdown'){ drag.x = e.clientX; drag.y = e.clientY; drag.moved = false; }
+  else if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 12) drag.moved = true;
+}
+function touchOffset(e, px){ return e.pointerType === 'touch' && drag.moved ? px : 0; }
+function stagePointer(e){
+  if (zoomed) return;
+  trackDrag(e);
+  const r = stage.getBoundingClientRect();
+  const x = e.clientX - r.left, y = e.clientY - r.top - touchOffset(e, 70);
+  lens.style.display = 'block';
+  const size = Math.max(90, Math.min(170, r.width * 0.16));
+  lens.style.width = lens.style.height = size + 'px';
+  drawLens(lens, x, y, r.width, r.height, 0, 0, 2.2);
+  // near detection
+  const px = x / r.width * 100, py = y / r.height * 100;
+  SCENES.forEach(s => {
+    const [l,t,w,h] = s.rect;
+    const near = px > l && px < l + w && py > t && py < t + h;
+    hots[s.id].classList.toggle('near', near);
+  });
+}
+stage.addEventListener('pointermove', stagePointer);
+stage.addEventListener('pointerdown', stagePointer);
+stage.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') lens.style.display = 'none'; });
+stage.addEventListener('pointerup', e => {
+  if (e.pointerType !== 'touch' || zoomed || !drag.moved) return;
+  // After a touch drag, open the scene under the lens center.
+  const r = stage.getBoundingClientRect();
+  const px = (e.clientX - r.left) / r.width * 100, py = (e.clientY - r.top - 70) / r.height * 100;
+  const idx = SCENES.findIndex(s => { const [l,t,w,h] = s.rect; return px > l && px < l+w && py > t && py < t+h; });
+  if (idx >= 0) { e.preventDefault(); openScene(idx); }
+});
+
+/* ---------------- Scene ---------------- */
+const scene = $('#scene'), fog = $('#fog'), spark = $('#spark'), sceneLens = $('#sceneLens'), panel = $('#panel');
+let cur = null, clueFound = false, answered = false;
+
+function zoomPoster(s){
+  const r = stage.getBoundingClientRect();
+  const [l,t,w,h] = s.rect;
+  const k = Math.min(100/w, 100/h) * 0.95;
+  const cx = (l + w/2)/100 * r.width, cy = (t + h/2)/100 * r.height;
+  poster.style.transform = `translate(${r.width/2 - cx*k}px, ${r.height/2 - cy*k}px) scale(${k})`;
+}
+function openScene(i){
+  if (zoomed) return;
+  zoomed = true;
+  lens.style.display = 'none';
+  Object.values(hots).forEach(h => h.classList.remove('near'));
+  cur = SCENES[i];
+  sfx('click');
+  zoomPoster(cur);
+  setTimeout(() => showScene(i), 850);
+}
+function setSceneBg(el, s){
+  const [l,t,w,h] = s.rect;
+  el.style.backgroundImage = posterCssUrl; el.dataset.posterBg = '';
+  el.style.backgroundSize = `${100*100/w}% ${100*100/h}%`;
+  el.style.backgroundPosition = `${l/(100-w)*100}% ${t/(100-h)*100}%`;
+}
+function showScene(i){
+  const s = SCENES[i];
+  const [l,t,w,h] = s.rect;
+  $('#sceneNum').textContent = i + 1;
+  $('#sceneName').textContent = `Trace ${i+1} · ${s.title}`;
+  scene.style.aspectRatio = `${w*PW} / ${h*PH}`;
+  setSceneBg(scene, s); setSceneBg(fog, s);
+  spark.style.left = s.target[0] + '%'; spark.style.top = s.target[1] + '%';
+  clueFound = found.has(s.id); answered = false;
+  scene.classList.toggle('clear', clueFound);
+  $('#sceneHint').innerHTML = clueFound ? '✅ 这个线索你已经找到啦！可以再答一次题。' : '🔍 ' + s.hint;
+  renderPanel();
+  $('#sceneModal').classList.add('show');
+  if (!clueFound) speak("Let's look carefully!");
+  else speak(s.q);
+}
+function closeScene(){
+  $('#sceneModal').classList.remove('show');
+  sceneLens.style.display = 'none';
+  stopVoice();
+  poster.style.transform = '';
+  setTimeout(() => {
+    zoomed = false;
+    if (found.size === SCENES.length && !store.getItem('signScoutFinishedShown')) {
+      store.setItem('signScoutFinishedShown', '1');
+      showFinish();
+    }
+  }, 900);
+}
+$('#sceneClose').addEventListener('click', closeScene);
+$('#sceneModal').addEventListener('click', e => { if (e.target.id === 'sceneModal') closeScene(); });
+
+function scenePointer(e){
+  if (!cur) return;
+  if (e.type !== 'pointerup') trackDrag(e);
+  const r = scene.getBoundingClientRect();
+  const x = e.clientX - r.left, y = e.clientY - r.top - touchOffset(e, 60);
+  const [l,t,w,h] = cur.rect;
+  const fullW = r.width * 100 / w, fullH = r.height * 100 / h;
+  const size = Math.max(84, Math.min(140, r.width * 0.24));
+  sceneLens.style.width = sceneLens.style.height = size + 'px';
+  sceneLens.style.display = 'block';
+  drawLens(sceneLens, x, y, fullW, fullH, l/100*fullW, t/100*fullH, 1.8);
+  const near = isNearTarget(x, y, r);
+  sceneLens.classList.toggle('hot-glow', near && !clueFound);
+  return { x, y, r, near };
+}
+function isNearTarget(x, y, r){
+  const tx = cur.target[0]/100 * r.width, ty = cur.target[1]/100 * r.height;
+  return Math.hypot(x - tx, y - ty) < Math.max(40, r.width * 0.14);
+}
+scene.addEventListener('pointermove', scenePointer);
+scene.addEventListener('pointerdown', scenePointer);
+scene.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') sceneLens.style.display = 'none'; });
+scene.addEventListener('pointerup', e => {
+  const p = scenePointer(e);
+  if (!p || clueFound) return;
+  if (p.near) onClueFound();
+  else { $('#sceneHint').innerHTML = '🤔 这里好像没有……放大镜变成<b style="color:#f5b630">金色</b>时就是找对地方啦！'; }
+});
+
+function onClueFound(){
+  clueFound = true;
+  scene.classList.add('clear');
+  sceneLens.classList.remove('hot-glow');
+  sfx('found');
+  $('#sceneHint').innerHTML = '✨ <b>发现线索！</b>雾散开了，快来回答问题吧～';
+  renderPanel();
+  setTimeout(() => speak(cur.q), 500);
+}
+
+function renderPanel(){
+  const s = cur;
+  if (!clueFound){
+    panel.innerHTML = `<div class="locked"><span class="big">🔍</span>先用放大镜在左边的雾里找到线索，<br>问题就会出现哦！<br><br><button class="btn ghost" id="skipFind">我找不到，给点提示</button></div>`;
+    $('#skipFind').onclick = () => {
+      spark.style.transform = 'translate(-50%,-50%) scale(1)';
+      $('#sceneHint').innerHTML = '💡 看，<b>闪光的地方</b>就是线索！把放大镜移过去点一下。';
+      setTimeout(() => { if (!clueFound) spark.style.transform = ''; }, 2500);
+    };
+    return;
+  }
+  panel.innerHTML = `
+    <div class="question">${s.q} <button class="say" id="sayQ" title="听问题">🔊</button></div>
+    <div class="question-zh">${s.qzh}</div>
+    <div class="opts">${s.options.map(o => `<button class="opt" data-o="${o}" aria-label="${ELEM[o].name} ${ELEM[o].zh}" ><span class="pic" style="background-image:url('${ELEM_IMG[o]}')"></span><span class="zh">${ELEM[o].zh}</span><span class="mark">${o === s.id ? '✓' : '✗'}</span></button>`).join('')}</div>
+    <div class="feedback" id="fb"></div>
+    <button class="btn blue answer-btn" id="showAns">👀 查看答案</button>
+    <div class="answer" id="ans">
+      ${spiritSVG(s.id)}
+      <div class="en">${s.a}</div>
+      <div class="zh">${s.azh}</div>
+      <div class="fact">${s.fact}</div>
+      <div class="row">
+        <button class="btn ghost" id="sayA">🔊 跟读一遍</button>
+        <button class="btn" id="backPoster">🗺️ 回到海报找下一个</button>
+      </div>
+    </div>`;
+  $('#sayQ').onclick = () => speak(s.q);
+  panel.querySelectorAll('.opt').forEach(b => b.onclick = () => choose(b));
+  $('#showAns').onclick = () => reveal(false);
+  $('#sayA').onclick = () => speak(s.a);
+  $('#backPoster').onclick = closeScene;
+}
+function choose(btn){
+  if (answered) return;
+  const o = btn.dataset.o;
+  if (o === cur.id){
+    btn.classList.add('right');
+    $('#fb').innerHTML = '<span style="color:#2e7d32">🎉 答对啦！Great job!</span>';
+    sfx('right');
+    reveal(true);
+  } else {
+    btn.classList.remove('wrong'); void btn.offsetWidth; btn.classList.add('wrong');
+    $('#fb').innerHTML = `<span style="color:#d84315">再想想～ ${ELEM[o].name}（${ELEM[o].zh}）不对哦，看看图里有什么？</span>`;
+    sfx('wrong');
+  }
+}
+function reveal(byAnswer){
+  if (answered) return;
+  answered = true;
+  panel.querySelectorAll('.opt').forEach(b => { if (b.dataset.o === cur.id) b.classList.add('right'); b.disabled = true; });
+  $('#showAns').style.display = 'none';
+  $('#ans').classList.add('show');
+  if (!byAnswer) sfx('found');
+  setTimeout(() => speak(cur.a), byAnswer ? 600 : 200);
+  const isNew = !found.has(cur.id);
+  found.add(cur.id);
+  store.setItem('signScoutFound', JSON.stringify([...found]));
+  renderBadges(); refreshHots();
+  if (isNew) toast(`${ELEM[cur.id].emoji} 获得 ${ELEM[cur.id].name} 徽章！(${found.size}/5)`);
+  setTimeout(() => $('#ans').scrollIntoView({ behavior:'smooth', block:'nearest' }), 100);
+}
+
+/* ---------------- Finish ---------------- */
+function confetti(){
+  const set = ['🌱','🔥','🍃','💧','❄️','⭐','✨'];
+  for (let i = 0; i < 40; i++){
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.textContent = set[i % set.length];
+    c.style.left = Math.random()*100 + 'vw';
+    c.style.animationDuration = (2.5 + Math.random()*2.5) + 's';
+    c.style.animationDelay = Math.random()*0.8 + 's';
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 6000);
+  }
+}
+function showFinish(){
+  $('#finishSpirits').innerHTML = SCENES.map(s => spiritSVG(s.id)).join('');
+  $('#finishModal').classList.add('show');
+  sfx('win'); confetti();
+  setTimeout(() => speak('You found all five traces! The world is so fascinating!'), 600);
+}
+$('#finishClose').onclick = () => $('#finishModal').classList.remove('show');
+
+
+/* ---------------- Toolbar / Intro ---------------- */
+$('#muteBtn').onclick = () => {
+  muted = !muted;
+  $('#muteBtn').textContent = muted ? '🔇 静音' : '🔊 声音';
+  if (muted) stopVoice();
+};
+$('#resetBtn').onclick = () => {
+  found.clear();
+  store.removeItem('signScoutFound');
+  store.removeItem('signScoutFinishedShown');
+  renderBadges(); refreshHots(); toast('已重置，重新开始探险吧！');
+};
+// intro hero: Nature Mother and the kids, cropped from the poster
+setSceneBg($('#hero'), { rect:[31,17,38,49] });
+$('#startBtn').onclick = () => {
+  $('#introModal').classList.remove('show');
+  sfx('found');
+  speak('Take a look around, and you will never miss the beauty!');
+};
+
+renderBadges(); refreshHots();
+window.addEventListener('resize', () => { if (zoomed && cur) zoomPoster(cur); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>跟唱跟跳 · The World Is So Beautiful</title>
+<style>
+  :root{
+    --green:#2f6b2a; --leaf:#7cb342; --cream:#fffbea; --paper:#f4f9e6;
+    --ink:#3b3221; --orange:#f08a24; --blue:#3aa3d8; --gold:#f5b630;
+    --radius:20px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"Comic Sans MS","Chalkboard SE","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 10% 10%,#e8f5c8 0,transparent 40%),
+      radial-gradient(circle at 90% 20%,#d7f0fb 0,transparent 35%),
+      radial-gradient(circle at 50% 100%,#fdf1c7 0,transparent 45%),
+      #f3f8e4;
+    min-height:100vh;
+  }
+  button{font-family:inherit;cursor:pointer}
+  .wrap{max-width:1120px;margin:0 auto;padding:14px 14px 40px}
+
+  /* ---------- Header ---------- */
+  header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+  .brand h1{margin:0;font-size:clamp(22px,4vw,34px);color:var(--green);letter-spacing:.5px}
+  .brand p{margin:2px 0 0;font-size:14px;color:#6b5d3e}
+  .badges{display:flex;gap:6px;flex-wrap:wrap;background:#fffdf3;border:2px solid #e7d9a8;border-radius:999px;padding:6px 10px;box-shadow:0 3px 0 #e7d9a8}
+  .badge{display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-size:13px;border:1.5px dashed #c9bb8a;color:#a59872;background:#fff;transition:.3s}
+  .badge.got{border-style:solid;color:#fff;transform:scale(1.05)}
+  .badge.got[data-k=earth]{background:#8d6e3f;border-color:#6d522b}
+  .badge.got[data-k=fire]{background:#f08a24;border-color:#c96a10}
+  .badge.got[data-k=wind]{background:#46b3a3;border-color:#2f8a7d}
+  .badge.got[data-k=water]{background:#3aa3d8;border-color:#2479a6}
+  .badge.got[data-k=ice]{background:#6fc6e8;border-color:#3c9bc0}
+  .toolbar{display:flex;gap:8px}
+  .icon-btn{border:none;background:#fff;border-radius:999px;padding:8px 12px;font-size:14px;box-shadow:0 3px 0 #d9cfae;color:var(--ink)}
+  .icon-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #d9cfae}
+
+  /* ---------- Song ---------- */
+  .song{margin-top:22px;background:#fffdf5;border-radius:var(--radius);padding:18px;border:3px solid #ecdfb0;box-shadow:0 6px 0 #ecdfb0}
+  .song-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
+  .song-head h2{margin:0;color:var(--green);font-size:clamp(20px,3vw,26px)}
+  .song-head small{color:#8a7b55}
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .btn{border:none;border-radius:999px;padding:10px 18px;font-size:15px;font-weight:bold;color:#fff;background:var(--leaf);box-shadow:0 4px 0 #558b2f}
+  .btn:active{transform:translateY(3px);box-shadow:0 1px 0 #558b2f}
+  .btn.orange{background:var(--orange);box-shadow:0 4px 0 #c0650c}
+  .btn.blue{background:var(--blue);box-shadow:0 4px 0 #22749f}
+  .btn.ghost{background:#fff;color:var(--ink);box-shadow:0 4px 0 #d9cfae}
+  .btn:disabled{opacity:.5}
+  .speed{display:flex;background:#fff;border-radius:999px;padding:3px;box-shadow:0 3px 0 #d9cfae}
+  .speed button{border:none;background:none;padding:7px 12px;border-radius:999px;font-size:14px;color:var(--ink)}
+  .speed button.on{background:var(--gold);color:#fff;font-weight:bold}
+  .now{margin:16px 0 10px;min-height:150px;border-radius:18px;padding:16px 16px 56px;text-align:center;
+    background:linear-gradient(135deg,#e9f7d4,#d9f1fb);position:relative;overflow:hidden}
+  .phase{display:inline-block;padding:4px 14px;border-radius:999px;background:#fff;font-size:14px;font-weight:bold;margin-bottom:8px}
+  .phase.listen{color:var(--blue)} .phase.you{color:#fff;background:var(--orange);animation:pulse 1s infinite} .phase.all{color:var(--green)}
+  .now-line{font-size:clamp(22px,4.4vw,40px);font-weight:bold;line-height:1.35}
+  .now-zh{font-size:15px;color:#6b5d3e;margin-top:4px}
+  .syl{transition:color .15s,transform .15s;display:inline-block;color:#9b916f}
+  .syl.done{color:var(--green)}
+  .syl.cur{color:var(--orange);transform:translateY(-4px) scale(1.15)}
+  .you .syl.cur,.mode-you .syl.cur{color:#e5531a}
+  .lyrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:6px 18px;max-height:none}
+  .lyric{padding:6px 10px;border-radius:10px;font-size:16px;transition:.2s;cursor:pointer}
+  .lyric:hover{background:#f5efd6}
+  .lyric.active{background:#fff2c2;font-weight:bold}
+  .lyric .zh{font-size:12px;color:#968a66;display:block}
+  .verse-title{grid-column:1/-1;font-size:13px;color:#a08d58;margin-top:6px}
+  .now{padding:14px 16px 18px}
+  .el-row{display:flex;justify-content:center;gap:8px;margin-bottom:10px}
+  .el-chip{width:clamp(40px,8vw,64px);aspect-ratio:1/1;border-radius:14px;background:#fff center/cover no-repeat;
+    border:3px solid #fff;filter:grayscale(1) brightness(.85) opacity(.55);transition:filter .25s,transform .25s,box-shadow .25s}
+  .el-chip.lit{filter:none}
+  .el-chip.cur{transform:scale(1.22) translateY(-4px);box-shadow:0 0 0 3px var(--gold),0 6px 16px rgba(0,0,0,.25);z-index:1}
+  .syl.el-word.cur{color:#e5531a}
+  .freeze{position:absolute;inset:0;display:grid;place-items:center;font-size:clamp(30px,6vw,56px);font-weight:bold;color:#1e7fb0;
+    background:radial-gradient(circle,rgba(220,245,255,.92),rgba(180,230,250,.85));opacity:0;pointer-events:none;transition:opacity .2s;
+    text-shadow:0 3px 0 #fff}
+  .freeze.show{opacity:1;animation:pop .4s cubic-bezier(.3,1.6,.5,1)}
+  @keyframes bob{from{transform:translateY(0) rotate(-4deg)}to{transform:translateY(-8px) rotate(4deg)}}
+
+
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+  @keyframes pop{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+  .song{margin-top:16px}
+  /* ---------- Video ---------- */
+  .block{background:#fffdf5;border-radius:var(--radius);padding:18px;border:3px solid #ecdfb0;box-shadow:0 6px 0 #ecdfb0}
+  .block h2{margin:0;color:var(--green);font-size:clamp(20px,3vw,26px)}
+  .block small{color:#8a7b55}
+  .player{margin-top:12px;background:#000;border-radius:18px;overflow:hidden;border:4px solid #fff;box-shadow:0 8px 22px rgba(0,0,0,.18)}
+  .player video{display:block;width:100%;aspect-ratio:568/320;background:#000}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .chip{border:none;background:#fff;border-radius:999px;padding:8px 14px;font-size:14px;box-shadow:0 3px 0 #e1d4a5;color:var(--ink)}
+  .chip:active{transform:translateY(2px);box-shadow:0 1px 0 #e1d4a5}
+  .vErr{margin:10px 0 0;padding:10px 14px;border-radius:14px;background:#fff1e6;color:#b4530c}
+  .jump{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}
+  .jump a{flex:1;min-width:140px;text-align:center;text-decoration:none;font-weight:bold;padding:10px 12px;border-radius:999px;color:#fff}
+  .jump .j1{background:var(--orange);box-shadow:0 4px 0 #c0650c}
+  .jump .j2{background:var(--leaf);box-shadow:0 4px 0 #558b2f}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(120px);background:#2f6b2a;color:#fff;
+    padding:10px 18px;border-radius:999px;z-index:300;transition:.35s;font-size:15px;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  footer{text-align:center;color:#9a8d68;font-size:12px;margin-top:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <h1>The World Is So Beautiful</h1>
+      <p>跟唱跟跳 · 听到 <b>Ice!</b> 要定住哦 ❄️</p>
+    </div>
+    <div class="toolbar">
+      <button class="icon-btn" id="muteBtn" title="声音开关">🔊 声音</button>
+    </div>
+  </header>
+
+  <nav class="jump">
+    <a class="j1" href="#dance">🎬 跟着视频跳</a>
+    <a class="j2" href="#song">🎤 跟着原曲唱</a>
+  </nav>
+
+  <section class="block" id="dance">
+    <h2>🎬 跟着视频跳</h2>
+    <small>和小朋友们一起跳！点下面的按钮可以直接跳到某一段。</small>
+    <div class="player">
+      <video id="video" controls playsinline webkit-playsinline preload="metadata" poster="dance-cover.jpg">
+        你的浏览器不支持视频播放。
+      </video>
+    </div>
+    <p class="vErr" id="vErr" hidden>😢 视频加载失败，请换一个浏览器（推荐 Safari / Chrome）再试。</p>
+    <div class="chips">
+      <button class="chip" data-t="0">⏮ 从头开始</button>
+      <button class="chip" data-t="5.8">🌍 Earth! Fire! Wind!…</button>
+      <button class="chip" data-t="38.2">🌸 The world is so beautiful</button>
+      <button class="chip" data-t="76.8">💃 One more dance</button>
+      <button class="chip" id="fsBtn">⛶ 全屏</button>
+    </div>
+  </section>
+
+  <section class="song" id="song">
+    <div class="song-head">
+      <div>
+        <h2>🎤 跟着原曲唱</h2>
+        <small>「跟唱模式」：先听一句原唱，再轮到你唱一句。点任意一句歌词可以单独练。</small>
+      </div>
+      <div class="controls">
+        <button class="btn" id="playFull">▶ 一起唱</button>
+        <button class="btn orange" id="playEcho">🎤 跟唱模式</button>
+        <button class="btn ghost" id="pauseBtn" disabled>⏸ 暂停</button>
+        <button class="btn ghost" id="stopBtn" disabled>⏹ 停止</button>
+        <div class="speed" id="speed">
+          <button data-rate="0.75">🐢 慢速</button>
+          <button data-rate="1" class="on">🎵 原速</button>
+        </div>
+      </div>
+    </div>
+    <div class="now" id="nowBox">
+      <div class="el-row" id="elRow"></div>
+      <span class="phase all" id="phase">准备好了吗？Ready?</span>
+      <div class="now-line" id="nowLine">Earth! Fire! Wind! Water! Ice!</div>
+      <div class="now-zh" id="nowZh">点击「一起唱」或「跟唱模式」开始，点歌词可单独练这一句</div>
+      <div class="freeze" id="freeze">❄️ Freeze! 定住！</div>
+    </div>
+    <div class="lyrics" id="lyrics"></div>
+  </section>
+  <footer>歌曲与视频取自用户提供的素材</footer>
+</div>
+
+<script>
+(() => {
+'use strict';
+// Spirit cards used as answer-option backgrounds; the single-file build replaces paths with base64 data URIs.
+const ELEM_IMG = {
+  earth: 'elements/earth.jpg',
+  fire: 'elements/fire.jpg',
+  wind: 'elements/wind.jpg',
+  water: 'elements/water.jpg',
+  ice: 'elements/ice.jpg',
+};
+const $ = s => document.querySelector(s);
+let muted = false;
+
+/* ---------------- Sound: SFX + TTS ---------------- */
+// iOS 17+: let Web Audio sound effects play even when the ringer switch is on silent.
+try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { console.warn('audioSession', e); }
+let sfxCtx = null;
+function sfx(kind){
+  if (muted) return;
+  try {
+    sfxCtx = sfxCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (sfxCtx.state === 'suspended') sfxCtx.resume();
+    const t = sfxCtx.currentTime;
+    const seq = {
+      right: [[523,0],[659,.1],[784,.2],[1047,.3]],
+      wrong: [[300,0],[220,.15]],
+      found: [[880,0],[1175,.08],[1568,.16]],
+      click: [[660,0]],
+      win:   [[523,0],[659,.12],[784,.24],[1047,.36],[784,.5],[1047,.62]],
+    }[kind] || [];
+    seq.forEach(([f,d]) => {
+      const o = sfxCtx.createOscillator(), g = sfxCtx.createGain();
+      o.type = kind === 'wrong' ? 'square' : 'triangle';
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t+d);
+      g.gain.exponentialRampToValueAtTime(kind === 'wrong' ? 0.06 : 0.18, t+d+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+d+0.28);
+      o.connect(g).connect(sfxCtx.destination);
+      o.start(t+d); o.stop(t+d+0.3);
+    });
+  } catch (e) { console.warn('sfx failed', e); }
+}
+
+/* ---------------- Song (original recording + karaoke timing) ---------------- */
+// SONG_SRC is a file path here; the single-file build replaces it with a base64 data URI.
+const SONG_SRC = 'song.mp3';
+const ELEM_WORD = { earth:'earth', fire:'fire', wind:'wind', water:'water', ice:'ice' };
+// Each line: start/end in seconds; w = [word, startTime]; practice=false lines are skipped in echo mode.
+const L = (part, start, end, words, zh, practice = true) => ({ part, start, end, zh, practice,
+  w: words.trim().split(/\s+/).map((x, j) => [x, null, j]) });
+const LYRICS = [
+  L('intro', 0.0, 3.3, `Don't forget to freeze when you hear "Ice!"`, '听到 "Ice!" 时别忘了定住哦！', false),
+  L('intro', 3.4, 5.7, `One, two, three, GO!`, '一、二、三，开始！', false),
+  L('chant', 5.8, 16.9, `Earth! Fire! Wind! Water! Ice!`, '大地！火！风！水！冰！'),
+  L('chant', 17.0, 21.5, `Tick, tick, tick, tick, tick, tick, tick, Woo!`, '滴答滴答……呜！'),
+  L('chant', 21.5, 32.6, `Earth! Fire! Wind! Water! Ice!`, '大地！火！风！水！冰！'),
+  L('chant', 32.7, 38.1, `Tick, tick, tick, tick, tick, tick, tick, Woo!`, '滴答滴答……呜！'),
+  L('verse', 38.2, 40.7, `The world is so beautiful`, '世界多么美丽'),
+  L('verse', 40.8, 45.6, `The world is so fascinating`, '世界多么奇妙'),
+  L('verse', 45.7, 49.7, `The world is so beautiful`, '世界多么美丽'),
+  L('verse', 49.8, 54.8, `Take a look around and you will never miss the beauty`, '看看四周，你永远不会错过美丽'),
+  L('verse', 54.9, 58.3, `Oh, the world is so beautiful`, '哦，世界多么美丽'),
+  L('verse', 58.4, 63.0, `The world is so fascinating`, '世界多么奇妙'),
+  L('verse', 63.1, 67.6, `The world is so beautiful`, '世界多么美丽'),
+  L('verse', 67.7, 73.0, `Take a look around and you will never miss the beauty`, '看看四周，你永远不会错过美丽'),
+  L('verse', 73.1, 76.6, `Hmm, hmm, hmm…`, '嗯～嗯～嗯～', false),
+  L('again', 76.8, 79.3, `One more dance, everyone! Go!`, '大家再跳一遍！开始！', false),
+  L('again', 79.3, 90.8, `Earth! Fire! Wind! Water! Ice!`, '大地！火！风！水！冰！'),
+  L('again', 90.9, 95.2, `Tick, tick, tick, tick, tick, tick, tick, Woo!`, '滴答滴答……呜！'),
+  L('again', 95.3, 99.0, `The world is so beautiful`, '世界多么美丽'),
+  L('again', 99.1, 102.8, `The world is so fascinating`, '世界多么奇妙'),
+  L('again', 102.9, 107.8, `The world is so beautiful`, '世界多么美丽'),
+  L('again', 107.9, 112.6, `Take a look around and you will never miss the beauty`, '看看四周，你永远不会错过美丽'),
+  L('again', 112.7, 115.8, `Hmm, hmm, hmm…`, '嗯～嗯～嗯～', false),
+];
+// Word start times measured from the recording (speech recognition, hand-checked against the video subtitles).
+const WORD_TIMES = [
+  [0.0,0.68,0.86,1.2,1.6,1.94,2.14,2.44],
+  [3.42,3.88,4.4,4.86],
+  [5.84,7.16,9.5,11.86,14.58],
+  [17.02,17.48,17.96,18.46,18.96,19.5,20.0,20.86],
+  [21.58,23.44,26.32,27.92,29.54],
+  [32.76,33.24,33.62,34.36,34.96,35.56,36.08,36.38],
+  [38.24,38.55,38.8,39.02,39.34],
+  [40.8,41.5,42.38,43.46,43.7],
+  [45.74,45.94,47.14,47.84,48.16],
+  [49.86,50.7,51.08,51.3,51.98,52.3,52.58,52.86,53.36,53.72,54.06],
+  [54.94,55.18,55.28,56.52,57.18,57.5],
+  [58.44,59.66,60.42,61.58,61.88],
+  [63.18,64.06,65.44,66.0,66.3],
+  [67.78,68.8,69.1,69.34,69.88,70.18,70.44,70.68,71.08,71.48,71.76],
+  [73.18,73.68,74.38],
+  [76.88,77.28,77.54,77.86,79.0],
+  [79.36,81.6,84.16,86.68,87.7],
+  [90.96,91.46,91.96,92.26,92.6,92.9,93.14,94.58],
+  [95.34,95.6,95.88,97.14,97.44],
+  [99.12,99.6,100.5,101.56,101.82],
+  [102.9,104.02,104.98,105.96,106.26],
+  [107.9,108.42,108.78,109.0,109.56,109.86,110.1,110.36,110.74,111.14,111.42],
+  [112.74,113.3,113.9],
+];
+if (WORD_TIMES.length !== LYRICS.length) throw new Error('WORD_TIMES / LYRICS length mismatch');
+LYRICS.forEach((l, i) => {
+  if (WORD_TIMES[i].length !== l.w.length) throw new Error(`line ${i}: ${l.w.length} words but ${WORD_TIMES[i].length} times`);
+  l.w.forEach((x, j) => { x[1] = WORD_TIMES[i][j]; });
+});
+const wordElem = word => ELEM_WORD[word.toLowerCase().replace(/[^a-z]/g, '')] || null;
+const lineText = l => l.w.map(x => x[0]).join(' ');
+function lineHTML(l){
+  return l.w.map(([x], j) => `<span class="syl${wordElem(x) ? ' el-word' : ''}" data-j="${j}">${x}</span>`).join(' ');
+}
+
+const PARTS = { intro:'🎬 开场 Intro', chant:'🌍 五种力量 Chant', verse:'🌸 美丽的世界 Verse', again:'💃 再跳一遍 One more time' };
+(function renderLyrics(){
+  let html = '', last = '';
+  LYRICS.forEach((l, i) => {
+    if (l.part !== last){ html += `<div class="verse-title">${PARTS[l.part]}</div>`; last = l.part; }
+    html += `<div class="lyric" data-i="${i}">${lineText(l)}<span class="zh">${l.zh}</span></div>`;
+  });
+  $('#lyrics').innerHTML = html;
+  $('#lyrics').querySelectorAll('.lyric').forEach(el => el.onclick = () => startSong(LYRICS[+el.dataset.i].practice ? 'echo' : 'full', +el.dataset.i, 1));
+  $('#elRow').innerHTML = Object.keys(ELEM_WORD).map(k => `<span class="el-chip" data-k="${k}" data-elem-bg="${k}"></span>`).join('');
+})();
+
+const songAudio = new Audio();
+songAudio.preload = 'none'; // upgraded to 'auto' in loadDeferredAssets()
+songAudio.setAttribute('playsinline', '');
+songAudio.src = SONG_SRC;
+// iOS ignores audio.volume; detect that so "your turn" falls back to muting the guide.
+const VOLUME_WORKS = (() => { const a = new Audio(); a.volume = 0.5; return a.volume === 0.5; })();
+const GUIDE_VOLUME = 0.22;
+
+let rate = 1;
+$('#speed').querySelectorAll('button').forEach(b => b.onclick = () => {
+  $('#speed').querySelectorAll('button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); rate = +b.dataset.rate;
+  songAudio.playbackRate = rate;
+});
+
+let song = null; // { steps, k, raf, mode, lastKey }
+function setPhase(cls, text){ const ph = $('#phase'); ph.className = 'phase ' + cls; ph.textContent = text; }
+function applyVolume(phase){
+  const guide = phase === 'you';
+  if (VOLUME_WORKS){ songAudio.volume = guide ? GUIDE_VOLUME : 1; songAudio.muted = muted; }
+  else songAudio.muted = muted || guide;
+}
+function buildSteps(mode, from, count){
+  const last = Math.min(LYRICS.length, from + count);
+  if (last <= from) throw new Error('没有可播放的歌词行');
+  if (mode === 'full'){
+    // play continuously across the chosen lines
+    return [{ phase:'all', start: LYRICS[from].start, end: LYRICS[last - 1].end }];
+  }
+  const steps = [];
+  for (let i = from; i < last; i++){
+    const l = LYRICS[i];
+    if (!l.practice) continue;
+    steps.push({ phase:'listen', start:l.start, end:l.end, i });
+    steps.push({ phase:'you', start:l.start, end:l.end, i });
+  }
+  if (!steps.length) throw new Error('这几句不需要跟唱');
+  return steps;
+}
+function seekAndPlay(t){
+  songAudio.currentTime = t;
+  const p = songAudio.play();
+  return p ? p : Promise.resolve();
+}
+function startSong(mode, from = 0, count = LYRICS.length){
+  stopSong();
+  let steps;
+  try { steps = buildSteps(mode, from, count); }
+  catch (e){ console.error(e); setPhase('all', '⚠️ ' + e.message); return; }
+  song = { steps, k: 0, raf: 0, mode, lastKey: '' };
+  songAudio.playbackRate = rate;
+  applyVolume(steps[0].phase);
+  // play() must be called synchronously inside the click handler (mobile autoplay rules)
+  seekAndPlay(steps[0].start).then(() => {
+    if (!song) return;
+    $('#nowBox').classList.add('playing');
+    $('#pauseBtn').disabled = false; $('#stopBtn').disabled = false;
+    $('#pauseBtn').textContent = '⏸ 暂停';
+    loop();
+  }).catch(e => {
+    console.warn('play blocked', e);
+    stopSong();
+    setPhase('all', '👆 浏览器拦截了播放，请再点一次按钮');
+  });
+}
+let freezeTimer = 0;
+function showFreeze(){
+  const f = $('#freeze');
+  f.classList.add('show');
+  clearTimeout(freezeTimer);
+  freezeTimer = setTimeout(() => f.classList.remove('show'), 1600 / rate);
+}
+function render(step, now){
+  const lineIdx = step.phase === 'all'
+    ? LYRICS.findIndex(l => now >= l.start && now < (LYRICS[LYRICS.indexOf(l) + 1]?.start ?? Infinity))
+    : step.i;
+  if (lineIdx < 0) return;
+  const line = LYRICS[lineIdx];
+  let j = -1;
+  line.w.forEach((x, n) => { if (now >= x[1]) j = n; });
+  const key = `${lineIdx}|${step.phase}|${j}`;
+  if (key === song.lastKey) return;
+  const prevLine = song.lastKey.split('|').slice(0, 2).join('|');
+  song.lastKey = key;
+  const nl = $('#nowLine');
+  if (prevLine !== `${lineIdx}|${step.phase}`){
+    nl.innerHTML = lineHTML(line);
+    $('#nowZh').textContent = line.zh;
+    document.querySelectorAll('.lyric').forEach(el => el.classList.toggle('active', +el.dataset.i === lineIdx));
+    const act = document.querySelector('.lyric.active');
+    if (act && song.mode === 'full') act.scrollIntoView({ block:'nearest', behavior:'smooth' });
+  }
+  setPhase(step.phase, { all:'🎵 一起唱 Sing together', listen:'🎧 先听 Listen', you:'🎤 轮到你唱！Your turn!' }[step.phase]);
+  nl.querySelectorAll('.syl').forEach(sp => {
+    const n = +sp.dataset.j;
+    sp.classList.toggle('done', n < j);
+    sp.classList.toggle('cur', n === j);
+  });
+  // light up the element chips while the chant is sung
+  const el = j >= 0 ? wordElem(line.w[j][0]) : null;
+  document.querySelectorAll('.el-chip').forEach(c => {
+    const k = c.dataset.k;
+    const idx = Object.keys(ELEM_WORD).indexOf(k);
+    const curIdx = el ? Object.keys(ELEM_WORD).indexOf(el) : -1;
+    const isChant = line.w.some(x => wordElem(x[0]));
+    c.classList.toggle('lit', isChant && curIdx >= 0 && idx <= curIdx);
+    c.classList.toggle('cur', k === el);
+  });
+  if (el === 'ice') showFreeze();
+}
+function loop(){
+  if (!song) return;
+  const step = song.steps[song.k];
+  const now = songAudio.currentTime;
+  if (now >= step.end || songAudio.ended){
+    song.k++;
+    if (song.k >= song.steps.length){ finishSong(); return; }
+    const next = song.steps[song.k];
+    applyVolume(next.phase);
+    if (Math.abs(songAudio.currentTime - next.start) > 0.3) songAudio.currentTime = next.start;
+    song.lastKey = '';
+  } else if (now >= step.start - 0.05){
+    render(step, now);
+  }
+  song.raf = requestAnimationFrame(loop);
+}
+function finishSong(){
+  stopSong();
+  setPhase('all', '🎉 唱得真棒！Well done!');
+  $('#nowLine').textContent = 'The world is so beautiful!';
+  $('#nowZh').textContent = '世界多么美丽！';
+  sfx('win');
+}
+function stopSong(){
+  songAudio.pause();
+  if (song){ cancelAnimationFrame(song.raf); song = null; }
+  applyVolume('all');
+  $('#nowBox').classList.remove('playing');
+  $('#pauseBtn').disabled = true; $('#stopBtn').disabled = true;
+  $('#pauseBtn').textContent = '⏸ 暂停';
+  document.querySelectorAll('.lyric').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.el-chip').forEach(c => c.classList.remove('lit', 'cur'));
+}
+$('#playFull').onclick = () => startSong('full');
+$('#playEcho').onclick = () => startSong('echo');
+$('#stopBtn').onclick = () => { stopSong(); setPhase('all', '已停止 Stopped'); };
+$('#pauseBtn').onclick = () => {
+  if (!song) return;
+  if (songAudio.paused){
+    songAudio.play().catch(e => console.warn('resume failed', e));
+    $('#pauseBtn').textContent = '⏸ 暂停';
+    $('#nowBox').classList.add('playing');
+  } else {
+    songAudio.pause();
+    $('#pauseBtn').textContent = '▶ 继续';
+    $('#nowBox').classList.remove('playing');
+  }
+};
+
+
+/* ---------------- Video (shares the speaker with the song: only one plays at a time) ---------------- */
+// Sources are constants so the single-file build can swap them for embedded data.
+const VIDEO_SRC = 'dance.mp4';
+const video = $('#video');
+function ensureVideo(){
+  if (video.getAttribute('src')) return;
+  video.src = typeof VIDEO_SRC === 'function' ? VIDEO_SRC() : VIDEO_SRC;
+}
+// Assign the source on first interaction so the page itself opens fast.
+['pointerdown', 'focus'].forEach(ev => video.addEventListener(ev, ensureVideo, { once:true }));
+video.addEventListener('play', () => { if (song){ stopSong(); setPhase('all', '已暂停 Paused'); } });
+video.addEventListener('error', () => {
+  const err = video.error;
+  if (!video.getAttribute('src')) return;
+  console.error('video error', err && err.code, err && err.message);
+  $('#vErr').hidden = false;
+});
+document.querySelectorAll('.chip[data-t]').forEach(b => b.onclick = () => {
+  ensureVideo();
+  const t = +b.dataset.t;
+  const go = () => {
+    video.currentTime = t;
+    const p = video.play();
+    if (p) p.catch(e => console.warn('video play blocked', e));
+  };
+  if (video.readyState >= 1) go();
+  else { video.addEventListener('loadedmetadata', go, { once:true }); video.load(); const p = video.play(); if (p) p.catch(() => {}); }
+});
+$('#fsBtn').onclick = () => {
+  ensureVideo();
+  if (video.requestFullscreen) video.requestFullscreen().catch(e => console.warn('fullscreen failed', e));
+  else if (video.webkitEnterFullscreen) video.webkitEnterFullscreen(); // iPhone Safari
+};
+// Starting the song pauses the video.
+['playFull', 'playEcho'].forEach(id => $('#' + id).addEventListener('click', () => { if (!video.paused) video.pause(); }, true));
+document.getElementById('lyrics').addEventListener('click', () => { if (!video.paused) video.pause(); }, true);
+
+/* ---------------- Mute / deferred loading ---------------- */
+$('#muteBtn').onclick = () => {
+  muted = !muted;
+  $('#muteBtn').textContent = muted ? '🔇 静音' : '🔊 声音';
+  songAudio.muted = muted;
+  video.muted = muted;
+};
+function loadDeferredAssets(){
+  document.querySelectorAll('[data-elem-bg]').forEach(el => { el.style.backgroundImage = `url('${ELEM_IMG[el.dataset.elemBg]}')`; });
+  if (songAudio.preload === 'none') songAudio.preload = 'auto';
+  ensureVideo();
+}
+if (document.readyState === 'complete') setTimeout(loadDeferredAssets, 0);
+else window.addEventListener('load', () => setTimeout(loadDeferredAssets, 0));
+})();
+</script>
+</body>
+</html>

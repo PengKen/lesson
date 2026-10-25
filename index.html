@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign Scout 寻迹小探</title>
+<link rel="preload" as="image" href="poster-sm.jpg">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;min-height:100vh;
+    background:linear-gradient(160deg,#fff8e7 0%,#e9f7e4 100%);color:#2d4a2b;
+    display:flex;flex-direction:column;align-items:center;padding:32px 16px}
+  h1{font-size:30px;color:#2f7d32;text-align:center}
+  .sub{margin:6px 0 28px;color:#6b8a63;text-align:center}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;width:100%;max-width:760px}
+  a.card{display:block;text-decoration:none;color:inherit;background:#fff;border-radius:22px;overflow:hidden;
+    box-shadow:0 8px 24px rgba(60,100,50,.15);transition:transform .2s,box-shadow .2s}
+  a.card:hover{transform:translateY(-4px);box-shadow:0 14px 30px rgba(60,100,50,.22)}
+  .cover{height:170px;background-size:cover;background-position:center}
+  .body{padding:16px 18px 20px}
+  .body h2{font-size:22px;margin-bottom:6px}
+  .body p{font-size:14px;color:#6b7d66;line-height:1.6}
+  .go{display:inline-block;margin-top:12px;padding:8px 18px;border-radius:999px;color:#fff;font-weight:700}
+  .orange .go{background:#f08a24}.green .go{background:#43a047}
+  footer{margin-top:32px;font-size:12px;color:#9aac93}
+</style>
+</head>
+<body>
+  <h1>Sign Scout 寻迹小探</h1>
+  <p class="sub">The World Is So Beautiful · 五大元素探索之旅</p>
+  <div class="cards">
+    <a class="card orange" href="poster.html">
+      <div class="cover" style="background-image:url(poster-sm.jpg)"></div>
+      <div class="body">
+        <h2>🔍 海报寻迹</h2>
+        <p>拿起放大镜探索海报，拨开雾气找线索，回答问题收集元素徽章。</p>
+        <span class="go">开始探索 →</span>
+      </div>
+    </a>
+    <a class="card green" href="song.html">
+      <div class="cover" style="background-image:url(dance-cover.jpg)"></div>
+      <div class="body">
+        <h2>🎵 跟唱跟跳</h2>
+        <p>先跟着视频学跳舞，再跟着原曲一起唱，听到 “Ice” 就定住！</p>
+        <span class="go">开始跟唱 →</span>
+      </div>
+    </a>
+  </div>
+  <footer>Sign Scout · 寻迹小探</footer>
+</body>
+</html>
